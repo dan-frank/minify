@@ -1,23 +1,59 @@
-var gulp = require('gulp');
+const gulp = require('gulp');
+const browserSync = require('browser-sync').create();
 
-var uglify = require('gulp-uglify');
-var cleanCSS = require('gulp-clean-css');
+const sass = require('gulp-sass');
+const postCss = require('gulp-postcss');
+const autoPrefixer = require('autoprefixer');
+const cssNano = require('cssnano');
 
-gulp.task('default', ['build']);
+const uglify = require('gulp-uglify');
+const babel = require('gulp-babel');
+const jsImport = require('gulp-js-import');
 
-gulp.task('compressjs', function(){
-  return gulp.src('pre/*.js')
-    .pipe(uglify())
-    .pipe(gulp.dest('js'));
-});
+const dist = './dist';
 
-gulp.task('compresscss', function(){
-  return gulp.src('pre/*.css')
-    .pipe(cleanCSS({debug: true}, function(details) {
-            console.log(details.name + ': ' + details.stats.originalSize);
-            console.log(details.name + ': ' + details.stats.minifiedSize);
+function styles() {
+    const processors = [
+        autoPrefixer(),
+        cssNano({
+            discardComments: {removeAll: true}
+        })
+    ];
+    return gulp.src('./styles/main.sass')
+        .pipe(sass().on('error', sass.logError))
+        .pipe(postCss(processors))
+        .pipe(gulp.dest(dist))
+        .pipe(browserSync.stream());
+}
+
+function scripts() {
+    return gulp.src('./scripts/main.js')
+        .pipe(jsImport({hideConsole: true}))
+        .pipe(babel({
+            presets: [
+                ['@babel/env', {
+                    modules: false
+                }]
+            ]
         }))
-        .pipe(gulp.dest('css'));
-});
+        .pipe(uglify())
+        .pipe(gulp.dest(dist))
+        .pipe(browserSync.stream());
+}
 
-gulp.task('build', ['compresscss', 'compressjs']);
+function watch() {
+    browserSync.init({
+        // proxy: "http://localhost:8887/jake_lindemere"
+        server: {
+            baseDir: './'
+        }
+    }); 
+
+    gulp.watch('./styles/**/*.sass', styles);
+    gulp.watch('./scripts/**/*.js', scripts);
+    gulp.watch('./**/*.html').on('change', browserSync.reload);
+}
+
+exports.styles = styles;
+exports.scripts = scripts;
+exports.watch = watch;
