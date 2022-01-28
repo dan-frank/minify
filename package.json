@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "gulp watch",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "init": "npx browserslist@latest --update-db && npm run compile && gulp styles && gulp scripts",
+    "start": "gulp watch"
   },
   "keywords": [],
   "author": "",
